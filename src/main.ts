@@ -5,6 +5,7 @@ import type {
   PluginManifest,
 } from 'obsidian';
 import { DataviewApi, getAPI, isPluginEnabled } from 'obsidian-dataview';
+import type { Locale } from 'antd/es/locale';
 
 import { Project } from './para/Project';
 import { Area } from './para/Area';
@@ -20,7 +21,21 @@ import { LogLevel, type PluginSettings } from './type';
 import { DEFAULT_SETTINGS } from './SettingTab';
 import { ERROR_MESSAGES } from './constant';
 import { logMessage, renderError } from './util';
-import { PeriodicPARAView, VIEW_TYPE } from './view/PeriodicPARA';
+import { CreateNoteView, CREATE_NOTE } from './view/CreateNote';
+import { CalendarView, CALENDAR } from './view/Calendar';
+
+import enUS from 'antd/locale/en_US';
+import zhCN from 'antd/locale/zh_CN';
+import 'dayjs/locale/zh-cn';
+import 'dayjs/locale/zh';
+
+const localeMap: Record<string, Locale> = {
+  en: enUS,
+  'en-us': enUS,
+  zh: zhCN,
+  'zh-cn': zhCN,
+};
+const locale = window.localStorage.getItem('language') || 'en';
 
 import './main.less';
 
@@ -60,19 +75,22 @@ export default class PeriodicPARA extends Plugin {
 
   async onload() {
     await this.loadSettings();
-    this.registerView(VIEW_TYPE, (leaf) => {
-      return new PeriodicPARAView(leaf, this.settings);
+    this.registerView(CREATE_NOTE, (leaf) => {
+      return new CreateNoteView(leaf, this.settings, localeMap[locale]);
+    });
+    this.registerView(CALENDAR, (leaf) => {
+      return new CalendarView(leaf, this.settings, localeMap[locale], this.task);
     });
 
-    const item = this.addRibbonIcon('zap', 'Periodic PARA', this.initView);
+    const item = this.addRibbonIcon('zap', 'Periodic PARA', this.initCalendarView);
     setIcon(item, 'zap');
 
     this.addCommand({
       id: 'periodic-para',
       name: 'Create Notes',
-      callback: this.initView,
+      callback: this.initCreateNoteView,
     });
-    this.app.workspace.onLayoutReady(this.initView);
+    this.app.workspace.onLayoutReady(this.initCreateNoteView);
     this.loadHelpers();
     this.loadDailyRecord();
     this.loadGlobalHelpers();
@@ -219,8 +237,8 @@ export default class PeriodicPARA extends Plugin {
     (window as any).PeriodicPARA.Date = this.date;
   }
 
-  initView = async () => {
-    const leafs = this.app.workspace.getLeavesOfType(VIEW_TYPE);
+  initCreateNoteView = async () => {
+    const leafs = this.app.workspace.getLeavesOfType(CREATE_NOTE);
 
     if (leafs.length > 0) {
       this.app.workspace.revealLeaf(leafs[0]);
@@ -234,6 +252,21 @@ export default class PeriodicPARA extends Plugin {
       leaf = this.app.workspace.getLeftLeaf(false);
     }
 
-    await leaf.setViewState({ type: VIEW_TYPE, active: true });
+    await leaf.setViewState({ type: CREATE_NOTE, active: true });
+  };
+
+  initCalendarView = async () => {
+    const leafs = this.app.workspace.getLeavesOfType(CALENDAR);
+
+    if (leafs.length > 0) {
+      this.app.workspace.revealLeaf(leafs[0]);
+      return;
+    }
+
+    const leaf = this.app.workspace.getLeaf(false);
+
+    await leaf.setViewState({ type: CALENDAR, active: true });
+
+    this.app.workspace.revealLeaf(leaf);
   };
 }

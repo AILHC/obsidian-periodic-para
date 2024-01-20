@@ -2,7 +2,7 @@ import { App, TFile, TFolder } from 'obsidian';
 import type { PluginSettings } from '../type';
 import { ERROR_MESSAGES } from '../constant';
 import { DataviewApi } from 'obsidian-dataview';
-import { logMessage } from 'src/util';
+import { logMessage } from '../util';
 
 export class File {
   app: App;
