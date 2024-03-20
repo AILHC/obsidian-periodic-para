@@ -646,7 +646,8 @@ export class DiDa365API implements IDiDa365API {
 				for (let childId of item.childIds) {
 					childItem = itemMap![childId];
 					if (!childItem) {
-						logMessage(`缺乏任务数据:${childId}`, LogLevel.error);
+						
+						logMessage(`缺乏任务数据:${childId}`, LogLevel.warn);
 						continue;
 					}
 					this.formatItemInfo(childItem);
